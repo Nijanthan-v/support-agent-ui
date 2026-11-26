@@ -1,11 +1,14 @@
 "use client";
 
 import React from "react";
-import { ApiHealth } from "@/types/ticket";
+import { ApiHealth, WorkspaceView } from "@/types/ticket";
 
 interface NavbarProps {
   health: ApiHealth;
   refreshing: boolean;
+  activeView: WorkspaceView;
+  pendingCount: number;
+  onViewChange: (view: WorkspaceView) => void;
   onRefresh: () => void;
   onOpenModal: () => void;
 }
@@ -13,6 +16,9 @@ interface NavbarProps {
 export default function Navbar({
   health,
   refreshing,
+  activeView,
+  pendingCount,
+  onViewChange,
   onRefresh,
   onOpenModal,
 }: NavbarProps) {
@@ -29,6 +35,26 @@ export default function Navbar({
           </div>
         </div>
       </div>
+
+      <nav className="view-switcher" aria-label="Workspace Screens">
+        <button
+          type="button"
+          className={`view-switch-btn ${activeView === "queue" ? "active" : ""}`}
+          onClick={() => onViewChange("queue")}
+          aria-pressed={activeView === "queue"}
+        >
+          <span>⚡ Escalation Queue</span>
+          {pendingCount > 0 && <span className="nav-pending-pill">{pendingCount}</span>}
+        </button>
+        <button
+          type="button"
+          className={`view-switch-btn ${activeView === "telemetry" ? "active" : ""}`}
+          onClick={() => onViewChange("telemetry")}
+          aria-pressed={activeView === "telemetry"}
+        >
+          <span>📊 Telemetry &amp; Audit</span>
+        </button>
+      </nav>
 
       <div className="nav-controls">
         <div className="system-status-pills">

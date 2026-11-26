@@ -39,6 +39,8 @@ export interface PresetScenario {
 
 export type TicketFilter = "all" | "awaiting_approval" | "resolved" | "rejected";
 
+export type WorkspaceView = "queue" | "telemetry";
+
 export interface ToastMessage {
   id: string;
   type: "success" | "error" | "info";
