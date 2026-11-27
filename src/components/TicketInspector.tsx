@@ -21,6 +21,8 @@ export default function TicketInspector({
   const [operatorNotes, setOperatorNotes] = useState<string>("");
   const [copiedId, setCopiedId] = useState<boolean>(false);
   const [copiedDraft, setCopiedDraft] = useState<boolean>(false);
+  const [copiedFactSheet, setCopiedFactSheet] = useState<boolean>(false);
+  const [evidenceTab, setEvidenceTab] = useState<"factsheet" | "thought">("factsheet");
 
   if (!ticket) {
     return (
@@ -53,6 +55,17 @@ export default function TicketInspector({
       setTimeout(() => setCopiedDraft(false), 2000);
     }
   };
+
+  const handleCopyFactSheet = () => {
+    if (ticket.fact_sheet) {
+      onCopyText(JSON.stringify(ticket.fact_sheet, null, 2), "FactSheet JSON");
+      setCopiedFactSheet(true);
+      setTimeout(() => setCopiedFactSheet(false), 2000);
+    }
+  };
+
+  const factEntries = ticket.fact_sheet ? Object.entries(ticket.fact_sheet) : [];
+  const thoughtSteps = ticket.thought_process ?? [];
 
   const handleApproveClick = async () => {
     await onApprove(ticket, operatorNotes);
@@ -163,6 +176,82 @@ export default function TicketInspector({
             </p>
           </div>
         </div>
+
+        {/* Ground-Truth FactSheet & LangGraph Reasoning Trace */}
+        {(factEntries.length > 0 || thoughtSteps.length > 0) && (
+          <div className="inspector-card evidence-card">
+            <div className="card-header-bar evidence-header-bar">
+              <div className="evidence-tab-group" role="tablist" aria-label="Diagnostic Evidence">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={evidenceTab === "factsheet"}
+                  className={`evidence-tab-btn ${evidenceTab === "factsheet" ? "active" : ""}`}
+                  onClick={() => setEvidenceTab("factsheet")}
+                >
+                  🗄️ Ground-Truth FactSheet ({factEntries.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={evidenceTab === "thought"}
+                  className={`evidence-tab-btn ${evidenceTab === "thought" ? "active" : ""}`}
+                  onClick={() => setEvidenceTab("thought")}
+                >
+                  🧠 Reasoning Trace ({thoughtSteps.length})
+                </button>
+              </div>
+
+              {evidenceTab === "factsheet" && factEntries.length > 0 && (
+                <button
+                  type="button"
+                  className="btn-copy-draft"
+                  onClick={handleCopyFactSheet}
+                >
+                  {copiedFactSheet ? "✓ Copied JSON" : "📋 Copy FactSheet"}
+                </button>
+              )}
+            </div>
+
+            {evidenceTab === "factsheet" ? (
+              factEntries.length > 0 ? (
+                <div className="factsheet-grid">
+                  {factEntries.map(([key, value]) => {
+                    const formatted =
+                      typeof value === "object" && value !== null
+                        ? JSON.stringify(value)
+                        : String(value);
+                    return (
+                      <div key={key} className="factsheet-item">
+                        <span className="factsheet-key">{key}</span>
+                        <code className="factsheet-val" title={formatted}>
+                          {formatted}
+                        </code>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="evidence-empty-note">
+                  No structured FactSheet fields attached to this escalation.
+                </p>
+              )
+            ) : thoughtSteps.length > 0 ? (
+              <ol className="thought-timeline">
+                {thoughtSteps.map((step, idx) => (
+                  <li key={`${idx}-${step.slice(0, 16)}`} className="thought-step-item">
+                    <span className="thought-step-num">{idx + 1}</span>
+                    <span className="thought-step-text">{step}</span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="evidence-empty-note">
+                No LangGraph step trace recorded for this ticket.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Pre-Drafted Customer Message */}
         {ticket.customer_response_message && (
